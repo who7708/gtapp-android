@@ -3,21 +3,7 @@ package com.geetest.android.sdk;
 /**
  * Created by NikoXu on 08/12/2016.
  */
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -35,10 +21,23 @@ import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * 这个类解析了Android 4.0以下的WebView注入Javascript对象引发的安全漏洞。
@@ -49,48 +48,23 @@ import android.webkit.WebViewClient;
 public class GTWebView extends WebView {
 
     private static final String ACTIVITY_TAG = "GTWebView";
-
-    private String baseDomain = "mobilestatic.geetest.com";
-    private String[] staticIPList = {"115.28.113.153"};
-
     private static final boolean DEBUG = true;
     private static final String VAR_ARG_PREFIX = "arg";
     private static final String MSG_PROMPT_HEADER = "GtApp:";
     private static final String KEY_INTERFACE_NAME = "obj";
     private static final String KEY_FUNCTION_NAME = "func";
     private static final String KEY_ARG_ARRAY = "args";
-    private static final String[] mFilterMethods = {
-            "getClass",
-            "hashCode",
-            "notify",
-            "notifyAll",
-            "equals",
-            "toString",
-            "wait",
-    };
-
+    private static final String[] mFilterMethods = {"getClass", "hashCode", "notify", "notifyAll", "equals", "toString", "wait",};
+    public boolean debug = false;
+    private String baseDomain = "mobilestatic.geetest.com";
+    private String[] staticIPList = {"115.28.113.153"};
     private HashMap<String, Object> mJsInterfaceMap = new HashMap<String, Object>();
     private String mJsStringCache = null;
     private Context mContext;
     private Timer domainTimer;
     private Timer ipTimer;
-
     private String mParamsString;
-
-    public boolean debug = false;
-
-    public interface GtWebViewListener {
-        //通知native验证已准备完毕
-        void gtCallReady(Boolean status); // true准备完成/false未准备完成
-        //通知javascript发生严重错误
-        void  gtError();
-    }
-
     private GtWebViewListener gtListener;
-
-    public void setGtWebViewListener(GtWebViewListener listener) {
-        gtListener = listener;
-    }
 
     public GTWebView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
@@ -105,6 +79,10 @@ public class GTWebView extends WebView {
     public GTWebView(Context context) {
         super(context);
         init(context);
+    }
+
+    public void setGtWebViewListener(GtWebViewListener listener) {
+        gtListener = listener;
     }
 
     private void init(Context context) {
@@ -136,7 +114,7 @@ public class GTWebView extends WebView {
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                ((Activity)mContext).runOnUiThread(new Runnable() {
+                ((Activity) mContext).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         if (getProgress() < 100) {
@@ -156,7 +134,7 @@ public class GTWebView extends WebView {
     }
 
     public void loadIPUrl(String aIP, String paramsString) {
-        String mobile_ip_request_url = "http://" + aIP +"/static/appweb/app-index.html" + paramsString;
+        String mobile_ip_request_url = "http://" + aIP + "/static/appweb/app-index.html" + paramsString;
         Log.i(ACTIVITY_TAG, "load url: " + mobile_ip_request_url);
         final Map<String, String> additionalHttpHeaders = new HashMap<String, String>();
         additionalHttpHeaders.put("Host", baseDomain);
@@ -166,7 +144,7 @@ public class GTWebView extends WebView {
         TimerTask timerTask1 = new TimerTask() {
             @Override
             public void run() {
-                ((Activity)mContext).runOnUiThread(new Runnable() {
+                ((Activity) mContext).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         if (getProgress() < 100) {
@@ -359,8 +337,7 @@ public class GTWebView extends WebView {
         script.append("}");
     }
 
-    private boolean handleJsInterface(WebView view, String url, String message, String defaultValue,
-                                      JsPromptResult result) {
+    private boolean handleJsInterface(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
         String prefix = MSG_PROMPT_HEADER;
         if (!message.startsWith(prefix)) {
             return false;
@@ -395,8 +372,7 @@ public class GTWebView extends WebView {
         return false;
     }
 
-    private boolean invokeJSInterfaceMethod(JsPromptResult result,
-                                            String interfaceName, String methodName, Object[] args) {
+    private boolean invokeJSInterfaceMethod(JsPromptResult result, String interfaceName, String methodName, Object[] args) {
 
         boolean succeed = false;
         final Object obj = mJsInterfaceMap.get(interfaceName);
@@ -468,6 +444,14 @@ public class GTWebView extends WebView {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1;
     }
 
+    public interface GtWebViewListener {
+        //通知native验证已准备完毕
+        void gtCallReady(Boolean status); // true准备完成/false未准备完成
+
+        //通知javascript发生严重错误
+        void gtError();
+    }
+
     private class WebChromeClientEx extends WebChromeClient {
         @Override
         public final void onProgressChanged(WebView view, int newProgress) {
@@ -476,8 +460,7 @@ public class GTWebView extends WebView {
         }
 
         @Override
-        public final boolean onJsPrompt(WebView view, String url, String message,
-                                        String defaultValue, JsPromptResult result) {
+        public final boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
             if (view instanceof GTWebView) {
                 if (handleJsInterface(view, url, message, defaultValue, result)) {
                     return true;
@@ -516,8 +499,7 @@ public class GTWebView extends WebView {
         }
 
         @Override
-        public void onReceivedError(WebView view, int errorCode,
-                                    String description, String failingUrl) {
+        public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
             // TODO Auto-generated method stub
             if (gtListener != null) {
                 gtListener.gtCallReady(false);
@@ -599,8 +581,7 @@ public class GTWebView extends WebView {
         protected void onPostExecute(String result) {
             if (null != result) {
                 loadIPUrl(result, mParamsString);
-            }
-            else {
+            } else {
                 if (gtListener != null) {
                     gtListener.gtCallReady(false);
                 }
@@ -608,7 +589,9 @@ public class GTWebView extends WebView {
         }
 
         private String ping(String host, int port) {
-            if (port == 0) port = 80;
+            if (port == 0) {
+                port = 80;
+            }
 
             Socket connect = new Socket();
             try {
@@ -616,8 +599,7 @@ public class GTWebView extends WebView {
                 Log.i(ACTIVITY_TAG, "Ping " + host);
                 if (connect.isConnected()) {
                     return host;
-                }
-                else {
+                } else {
                     return null;
                 }
             } catch (IOException e) {

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">GT Demo For Android</string>
     <string name="user_name">gt-demo</string>
     <string name="user_password">******</string>
@@ -8,5 +7,4 @@
     <string name="logo_desc">极验logo</string>
     <string name="note">演示页面无需填写内容，直接点击登录</string>
     <string name="settings">设置</string>
-
 </resources>

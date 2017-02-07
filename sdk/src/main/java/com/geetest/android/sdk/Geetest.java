@@ -1,10 +1,8 @@
 package com.geetest.android.sdk;
 
-import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -17,14 +15,12 @@ import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-
-
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -35,9 +31,9 @@ import javax.net.ssl.X509TrustManager;
 
 public class Geetest {
 
+    public Boolean isOperating;
     private String captchaURL;
     private String validateURL;
-
     private String gt;
     private String challenge;
     private int success;
@@ -49,8 +45,7 @@ public class Geetest {
     private Timer timer;
     private int responseCode;
     private int mTimeout = 10000;//默认10000ms
-
-    public Boolean isOperating;
+    private GeetestListener geetestListener;
 
     public Geetest(String captchaURL, String validateURL) {
         this.captchaURL = captchaURL;
@@ -83,14 +78,6 @@ public class Geetest {
         }
     }
 
-    public interface GeetestListener {
-        void readContentTimeout();
-        void submitPostDataTimeout();
-        void receiveInvalidParameters();
-    }
-
-    private GeetestListener geetestListener;
-
     public void setGeetestListener(GeetestListener listener) {
         geetestListener = listener;
     }
@@ -107,9 +94,9 @@ public class Geetest {
 
                 JSONObject config = new JSONObject(info);
 
-                this.gt         = config.getString("gt");
-                this.challenge  = config.getString("challenge");
-                this.success    = config.getInt("success");
+                this.gt = config.getString("gt");
+                this.challenge = config.getString("challenge");
+                this.success = config.getInt("success");
 
                 return config;
             }
@@ -139,7 +126,7 @@ public class Geetest {
                 @Override
                 public void run() {
                     if (responseCode != HttpsURLConnection.HTTP_OK || sBuffer.toString().length() == 0) {
-                        if (mSSLReadConnection != null  ) {
+                        if (mSSLReadConnection != null) {
                             mSSLReadConnection.disconnect();
                         }
                         isOperating = false;
@@ -154,7 +141,7 @@ public class Geetest {
             try {
 
                 SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, new TrustManager[] { new TrustAllManager() }, null);
+                sslContext.init(null, new TrustManager[]{new TrustAllManager()}, null);
 
                 HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
                 HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
@@ -174,16 +161,16 @@ public class Geetest {
                 sslReadConnection.setDoOutput(false);
                 sslReadConnection.setRequestMethod("GET");
 
-                sslReadConnection.setConnectTimeout(mTimeout/2);
+                sslReadConnection.setConnectTimeout(mTimeout / 2);
 
-                sslReadConnection.setReadTimeout(mTimeout/2);
+                sslReadConnection.setReadTimeout(mTimeout / 2);
 
                 sslReadConnection.connect();
 
                 Map<String, List<String>> headerFields = sslReadConnection.getHeaderFields();
                 if (headerFields.get("Set-Cookie") != null) {
                     List<String> cookiesHeader = headerFields.get("Set-Cookie");
-                    if(cookiesHeader != null) {
+                    if (cookiesHeader != null) {
                         for (String cookie : cookiesHeader) {
                             cookieManager.getCookieStore().add(null, HttpCookie.parse(cookie).get(0));
                         }
@@ -194,7 +181,7 @@ public class Geetest {
 
                 InputStream inStream = sslReadConnection.getInputStream();
 
-                for (int n; (n = inStream.read(buf)) != -1;) {
+                for (int n; (n = inStream.read(buf)) != -1; ) {
 
                     sBuffer.append(new String(buf, 0, n, "UTF-8"));
 
@@ -213,7 +200,7 @@ public class Geetest {
 
                 if (responseCode == HttpsURLConnection.HTTP_CLIENT_TIMEOUT || responseCode == -1) {
                     if (geetestListener != null) {
-                            geetestListener.readContentTimeout();
+                        geetestListener.readContentTimeout();
                     }
                 }
 
@@ -247,7 +234,7 @@ public class Geetest {
             };
             timer.schedule(timerTask, mTimeout, 1);
 
-            HttpURLConnection readConnection = (HttpURLConnection)url.openConnection();
+            HttpURLConnection readConnection = (HttpURLConnection) url.openConnection();
             mReadConnection = readConnection;
 
             cookieManager = new CookieManager();
@@ -255,7 +242,7 @@ public class Geetest {
             Map<String, List<String>> headerFields = readConnection.getHeaderFields();
             if (headerFields.get("Set-Cookie") != null) {
                 List<String> cookiesHeader = headerFields.get("Set-Cookie");
-                if(cookiesHeader != null) {
+                if (cookiesHeader != null) {
                     for (String cookie : cookiesHeader) {
                         cookieManager.getCookieStore().add(null, HttpCookie.parse(cookie).get(0));
                     }
@@ -264,9 +251,9 @@ public class Geetest {
 
             try {
 
-                readConnection.setConnectTimeout((int)(mTimeout/2));
+                readConnection.setConnectTimeout((int) (mTimeout / 2));
 
-                readConnection.setReadTimeout((int) (mTimeout/2));
+                readConnection.setReadTimeout((int) (mTimeout / 2));
 
                 readConnection.connect();
 
@@ -274,7 +261,7 @@ public class Geetest {
 
                 InputStream inStream = readConnection.getInputStream();
 
-                for (int n; (n = inStream.read(buf)) != -1;) {
+                for (int n; (n = inStream.read(buf)) != -1; ) {
 
                     sBuffer.append(new String(buf, 0, n, "UTF-8"));
 
@@ -347,7 +334,7 @@ public class Geetest {
 
             try {
                 SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, new TrustManager[] { new TrustAllManager() }, null);
+                sslContext.init(null, new TrustManager[]{new TrustAllManager()}, null);
 
                 HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
                 HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
@@ -361,9 +348,8 @@ public class Geetest {
                 HttpsURLConnection sslSubmitConnection = (HttpsURLConnection) url.openConnection();
                 mSSLSubmitConnection = sslSubmitConnection;
 
-                if(cookieManager.getCookieStore().getCookies().size() > 0) {
-                    sslSubmitConnection.setRequestProperty("Cookie",
-                            TextUtils.join(";", cookieManager.getCookieStore().getCookies()));
+                if (cookieManager.getCookieStore().getCookies().size() > 0) {
+                    sslSubmitConnection.setRequestProperty("Cookie", TextUtils.join(";", cookieManager.getCookieStore().getCookies()));
                 }
 
                 sslSubmitConnection.setConnectTimeout(mTimeout);
@@ -372,11 +358,9 @@ public class Geetest {
                 sslSubmitConnection.setRequestMethod("POST");
                 sslSubmitConnection.setUseCaches(false);
 
-                sslSubmitConnection.setRequestProperty("Content-Type",
-                        "application/x-www-form-urlencoded");
+                sslSubmitConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-                sslSubmitConnection.setRequestProperty("Content-Length",
-                        String.valueOf(data.length));
+                sslSubmitConnection.setRequestProperty("Content-Length", String.valueOf(data.length));
 
                 OutputStream outputStream = sslSubmitConnection.getOutputStream();
                 outputStream.write(data);
@@ -438,16 +422,13 @@ public class Geetest {
                 submitConnection.setRequestMethod("POST");
                 submitConnection.setUseCaches(false);
 
-                if(cookieManager.getCookieStore().getCookies().size() > 0) {
-                    submitConnection.setRequestProperty("Cookie",
-                            TextUtils.join(";", cookieManager.getCookieStore().getCookies()));
+                if (cookieManager.getCookieStore().getCookies().size() > 0) {
+                    submitConnection.setRequestProperty("Cookie", TextUtils.join(";", cookieManager.getCookieStore().getCookies()));
                 }
 
-                submitConnection.setRequestProperty("Content-Type",
-                        "application/x-www-form-urlencoded");
+                submitConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
-                submitConnection.setRequestProperty("Content-Length",
-                        String.valueOf(data.length));
+                submitConnection.setRequestProperty("Content-Length", String.valueOf(data.length));
 
                 OutputStream outputStream = submitConnection.getOutputStream();
                 outputStream.write(data);
@@ -481,14 +462,11 @@ public class Geetest {
         return "";
     }
 
-    private StringBuffer getRequestData(Map<String, String> params,
-            String encode) {
+    private StringBuffer getRequestData(Map<String, String> params, String encode) {
         StringBuffer stringBuffer = new StringBuffer();
         try {
             for (Map.Entry<String, String> entry : params.entrySet()) {
-                stringBuffer.append(entry.getKey()).append("=")
-                        .append(URLEncoder.encode(entry.getValue(), encode))
-                        .append("&");
+                stringBuffer.append(entry.getKey()).append("=").append(URLEncoder.encode(entry.getValue(), encode)).append("&");
             }
             stringBuffer.deleteCharAt(stringBuffer.length() - 1);
         } catch (Exception e) {
@@ -513,17 +491,23 @@ public class Geetest {
         return resultData;
     }
 
+    public interface GeetestListener {
+        void readContentTimeout();
+
+        void submitPostDataTimeout();
+
+        void receiveInvalidParameters();
+    }
+
     public class TrustAllManager implements X509TrustManager {
 
         @Override
-        public void checkClientTrusted(X509Certificate[] arg0, String arg1)
-                throws CertificateException {
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
             // TODO Auto-generated method stub
         }
 
         @Override
-        public void checkServerTrusted(X509Certificate[] arg0, String arg1)
-                throws CertificateException {
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
             // TODO Auto-generated method stub
         }
 

@@ -1,26 +1,26 @@
 package com.geetest.android.demo;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
-import android.app.Activity;
-import android.content.DialogInterface;
-import android.app.ProgressDialog;
-import android.content.Context;
-import android.os.AsyncTask;
-import android.view.Window;
 import android.view.View.OnClickListener;
+import android.view.Window;
 import android.widget.Toast;
-
-import org.json.JSONObject;
 
 import com.geetest.android.sdk.Geetest;
 import com.geetest.android.sdk.GtDialog;
 import com.geetest.android.sdk.GtDialog.GtListener;
+
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends Activity {
 
@@ -37,8 +37,7 @@ public class MainActivity extends Activity {
             "http://api.apiapp.cc/gtcap/start-mobile-captcha/",
 
             // 设置二次验证的URL，需替换成自己的服务器URL
-            "http://api.apiapp.cc/gtcap/gt-server-validate/"
-    );
+            "http://api.apiapp.cc/gtcap/gt-server-validate/");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,34 +45,33 @@ public class MainActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
 
-        findViewById(R.id.btn_gtapp_sdk_demo_dlg).setOnClickListener(
-                new OnClickListener() {
+        findViewById(R.id.btn_gtapp_sdk_demo_dlg).setOnClickListener(new OnClickListener() {
 
-                    @Override
-                    public void onClick(View v) {
+            @Override
+            public void onClick(View v) {
 
-                        GtAppDlgTask gtAppDlgTask = new GtAppDlgTask();
-                        mGtAppDlgTask = gtAppDlgTask;
-                        mGtAppDlgTask.execute();
+                GtAppDlgTask gtAppDlgTask = new GtAppDlgTask();
+                mGtAppDlgTask = gtAppDlgTask;
+                mGtAppDlgTask.execute();
 
-                        if (!((Activity) context).isFinishing()) {
-                            progressDialog = ProgressDialog.show(context, null, "Loading", true, true);
-                            progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                                @Override
-                                public void onCancel(DialogInterface dialog) {
-                                    toastMsg("user cancel progress dialog");
-                                    if (mGtAppDlgTask.getStatus() == AsyncTask.Status.RUNNING) {
-                                        Log.i("async task", "status running");
-                                        captcha.cancelReadConnection();
-                                        mGtAppDlgTask.cancel(true);
-                                    } else {
-                                        Log.i("async task", "No thing happen");
-                                    }
-                                }
-                            });
+                if (!((Activity) context).isFinishing()) {
+                    progressDialog = ProgressDialog.show(context, null, "Loading", true, true);
+                    progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(DialogInterface dialog) {
+                            toastMsg("user cancel progress dialog");
+                            if (mGtAppDlgTask.getStatus() == AsyncTask.Status.RUNNING) {
+                                Log.i("async task", "status running");
+                                captcha.cancelReadConnection();
+                                mGtAppDlgTask.cancel(true);
+                            } else {
+                                Log.i("async task", "No thing happen");
+                            }
                         }
-                    }
-                });
+                    });
+                }
+            }
+        });
 
         captcha.setTimeout(5000);
 
@@ -105,71 +103,6 @@ public class MainActivity extends Activity {
                 toastMsg("Did recieve invalid parameters.");
             }
         });
-    }
-
-    class GtAppDlgTask extends AsyncTask<Void, Void, JSONObject> {
-
-        @Override
-        protected JSONObject doInBackground(Void... params) {
-
-            return captcha.checkServer();
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject parmas) {
-
-            if (parmas != null) {
-
-                // 根据captcha.getSuccess()的返回值 自动推送正常或者离线验证
-                if (captcha.getSuccess()) {
-                    openGtTest(context, parmas);
-                } else {
-                    // TODO 从API_1获得极验服务宕机或不可用通知, 使用备用验证或静态验证
-                    // 静态验证依旧调用上面的openGtTest(_, _, _), 服务器会根据getSuccess()的返回值, 自动切换
-                    // openGtTest(context, params);
-                    toastLongTimeMsg("Geetest Server is Down.");
-                    // 执行此处网站主的备用验证码方案
-                }
-
-            } else {
-                toastLongTimeMsg("Can't Get Data from API_1");
-            }
-        }
-    }
-
-    class GtAppValidateTask extends AsyncTask<String, Void, String> {
-
-        @Override
-        protected String doInBackground(String... params) {
-            try {
-                JSONObject res_json = new JSONObject(params[0]);
-
-                Map<String, String> validateParams = new HashMap<String, String>();
-
-                validateParams.put("geetest_challenge", res_json.getString("geetest_challenge"));
-
-                validateParams.put("geetest_validate", res_json.getString("geetest_validate"));
-
-                validateParams.put("geetest_seccode", res_json.getString("geetest_seccode"));
-
-                String response = captcha.submitPostData(validateParams, "utf-8");
-
-                //TODO 验证通过, 获取二次验证响应, 根据响应判断验证是否通过完整验证
-
-                return response;
-
-            } catch (Exception e) {
-
-                e.printStackTrace();
-            }
-
-            return "invalid result";
-        }
-
-        @Override
-        protected void onPostExecute(String params) {
-            toastMsg("server captcha :" + params);
-        }
     }
 
     public void openGtTest(Context ctx, JSONObject params) {
@@ -238,7 +171,7 @@ public class MainActivity extends Activity {
 
     private void toastMsg(final String msg) {
 
-        ((Activity)context).runOnUiThread(new Runnable() {
+        ((Activity) context).runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Toast.makeText(getBaseContext(), msg, Toast.LENGTH_SHORT).show();
@@ -249,13 +182,78 @@ public class MainActivity extends Activity {
 
     private void toastLongTimeMsg(final String msg) {
 
-        ((Activity)context).runOnUiThread(new Runnable() {
+        ((Activity) context).runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Toast.makeText(getBaseContext(), msg, Toast.LENGTH_LONG).show();
             }
         });
 
+    }
+
+    class GtAppDlgTask extends AsyncTask<Void, Void, JSONObject> {
+
+        @Override
+        protected JSONObject doInBackground(Void... params) {
+
+            return captcha.checkServer();
+        }
+
+        @Override
+        protected void onPostExecute(JSONObject parmas) {
+
+            if (parmas != null) {
+
+                // 根据captcha.getSuccess()的返回值 自动推送正常或者离线验证
+                if (captcha.getSuccess()) {
+                    openGtTest(context, parmas);
+                } else {
+                    // TODO 从API_1获得极验服务宕机或不可用通知, 使用备用验证或静态验证
+                    // 静态验证依旧调用上面的openGtTest(_, _, _), 服务器会根据getSuccess()的返回值, 自动切换
+                    // openGtTest(context, params);
+                    toastLongTimeMsg("Geetest Server is Down.");
+                    // 执行此处网站主的备用验证码方案
+                }
+
+            } else {
+                toastLongTimeMsg("Can't Get Data from API_1");
+            }
+        }
+    }
+
+    class GtAppValidateTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            try {
+                JSONObject res_json = new JSONObject(params[0]);
+
+                Map<String, String> validateParams = new HashMap<String, String>();
+
+                validateParams.put("geetest_challenge", res_json.getString("geetest_challenge"));
+
+                validateParams.put("geetest_validate", res_json.getString("geetest_validate"));
+
+                validateParams.put("geetest_seccode", res_json.getString("geetest_seccode"));
+
+                String response = captcha.submitPostData(validateParams, "utf-8");
+
+                //TODO 验证通过, 获取二次验证响应, 根据响应判断验证是否通过完整验证
+
+                return response;
+
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+
+            return "invalid result";
+        }
+
+        @Override
+        protected void onPostExecute(String params) {
+            toastMsg("server captcha :" + params);
+        }
     }
 
 }
